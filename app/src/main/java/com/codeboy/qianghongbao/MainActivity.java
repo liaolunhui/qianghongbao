@@ -24,12 +24,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 
 import com.codeboy.qianghongbao.job.WechatAccessbilityJob;
+import com.codeboy.qianghongbao.util.AccessibilityHelper;
 import com.codeboy.qianghongbao.util.BitmapUtils;
 
 import java.io.File;
+
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
+import com.github.nkzawa.emitter.Emitter;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * <p>Created by LeonLee on 15/2/17 下午10:11.</p>
@@ -41,11 +50,22 @@ public class MainActivity extends BaseSettingsActivity {
 
     private Dialog mTipsDialog;
     private MainFragment mMainFragment;
+    public static MainActivity currentActivity;
+    public static QiangHongBaoService service;
+    public static String copyText="";
+    public static AccessibilityNodeInfo nodeInfo;
+    private Socket mSocket;
+    {
+        try {
+            mSocket = IO.socket("http://192.168.1.222:8388");
+        } catch (Exception e) {}
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        currentActivity=this;
         String version = "";
         try {
             PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
@@ -53,6 +73,14 @@ public class MainActivity extends BaseSettingsActivity {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+
+        mSocket.on("connect",onConnect);
+        mSocket.on("disconnect",onDisconnect);
+        mSocket.on("copyText", onCopyText);
+        mSocket.on("logs", onLogs);
+        mSocket.on("goHome", onGoHome);
+        mSocket.connect();
+        handler.postDelayed(keepSocketConnected,1000);
 
         setTitle(getString(R.string.app_name) + version);
 
@@ -65,6 +93,148 @@ public class MainActivity extends BaseSettingsActivity {
         filter.addAction(Config.ACTION_NOTIFY_LISTENER_SERVICE_CONNECT);
         registerReceiver(qhbConnectReceiver, filter);
     }
+
+    private boolean socketConnected=false;
+
+
+    private Emitter.Listener onConnect = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            socketConnected=true;
+            mSocket.emit("androidAddonClientOnline");
+        }
+    };
+
+    private Emitter.Listener onDisconnect = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            socketConnected=false;
+            mSocket.connect();
+        }
+    };
+
+    android.os.Handler handler = new android.os.Handler();
+
+    private Runnable keepSocketConnected = new Runnable(){
+        public void run(){
+            //每秒检查SOCKET是否掉线，掉线则重连
+            if(socketConnected==false){
+                mSocket.connect();
+            }
+            ////// set the interval time here
+            handler.postDelayed(keepSocketConnected,1000);
+        }
+    };
+
+
+    private Emitter.Listener onCopyText = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            //String content=(String) args[0];
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+
+                    if(nodeInfo!=null) {
+                        AccessibilityNodeInfo fansGoNode = AccessibilityHelper.findNodeInfosByText(nodeInfo, "粉丝福利购");
+                        AccessibilityNodeInfo node;
+                        if (fansGoNode != null) {
+                            node = AccessibilityHelper.findNodeInfosByText(nodeInfo, "转到上一层级");
+                            if (node != null) {
+                                AccessibilityHelper.performClick(node);
+                                MainActivity.currentActivity.setClipBoard("");
+                            }
+                        }
+                    }
+
+                    MainActivity.copyText = (String) args[0];
+                    MainActivity.service.performGlobalAction(MainActivity.service.GLOBAL_ACTION_HOME);
+                    MainActivity.currentActivity.setClipBoard(MainActivity.copyText);
+
+                    //打开手机淘宝
+                    Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage("com.taobao.taobao");
+                    startActivity(LaunchIntent);
+
+                    new android.os.Handler().postDelayed(
+                            new Runnable() {
+                                public void run() {
+
+
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            //打开手机淘宝
+                                            Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage("com.taobao.taobao");
+                                            startActivity(LaunchIntent);
+                                        }
+                                    });
+
+                                }
+                            },300);
+
+                }
+            });
+        }
+    };
+
+    public void setClipBoard(String text){
+        ClipboardManager myClipboard;
+        myClipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        ClipData myClip;
+        myClip = ClipData.newPlainText("text", text);
+        myClipboard.setPrimaryClip(myClip);
+    }
+
+    public static void saveActivity(MainActivity activity){
+        MainActivity.currentActivity=activity;
+    }
+
+    public static MainActivity getActivity(){
+        MainActivity activity=MainActivity.currentActivity;
+        return activity;
+    }
+
+    private Emitter.Listener onGoHome = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            //String content=(String) args[0];
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    
+                }
+            });
+        }
+    };
+
+
+    private Emitter.Listener onLogs = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            System.out.println(args);
+        }
+    };
+
+    private Emitter.Listener onNewMessage = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject data = (JSONObject) args[0];
+                    String username;
+                    String message;
+                    try {
+                        username = data.getString("username");
+                        message = data.getString("message");
+                    } catch (JSONException e) {
+                        return;
+                    }
+
+                }
+            });
+        }
+    };
 
     @Override
     protected boolean isShowBack() {
@@ -128,6 +298,8 @@ public class MainActivity extends BaseSettingsActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        mSocket.disconnect();
+        mSocket.off("copyText",onCopyText);
         try {
             unregisterReceiver(qhbConnectReceiver);
         } catch (Exception e) {}
@@ -312,8 +484,10 @@ public class MainActivity extends BaseSettingsActivity {
 
             addPreferencesFromResource(R.xml.main);
 
+
             //微信红包开关
             Preference wechatPref = findPreference(Config.KEY_ENABLE_WECHAT);
+
             wechatPref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {

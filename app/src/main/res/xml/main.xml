@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory
-            android:title="开启抢红包平台">
+            android:title="开启抢红包平台"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <com.codeboy.qianghongbao.widget.CustomSwitchPreference
             android:defaultValue="true"
@@ -11,6 +14,20 @@
             android:key="KEY_ENABLE_WECHAT"/>
 
     </PreferenceCategory>
+
+
+    <PreferenceCategory
+        android:title="淘口令解析"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <EditTextPreference
+            android:defaultValue="http://192.168.1.222:8388"
+            android:key="nodejsServerAddress"
+            android:title="优惠券NODEJS服务器地址"
+            android:summary="用于实时接收淘口令"
+            android:dialogTitle="输入NODEJS服务器地址" />
+    </PreferenceCategory>
+
 
     <PreferenceCategory
         android:title="关于">

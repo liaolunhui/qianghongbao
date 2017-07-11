@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.codeboy.qianghongbao.job.AccessbilityJob;
 import com.codeboy.qianghongbao.job.WechatAccessbilityJob;
+import com.codeboy.qianghongbao.job.TaobaoAccessbilityJob;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ public class QiangHongBaoService extends AccessibilityService {
 
     private static final Class[] ACCESSBILITY_JOBS= {
             WechatAccessbilityJob.class,
+            TaobaoAccessbilityJob.class,
     };
 
     private static QiangHongBaoService service;
@@ -41,6 +43,7 @@ public class QiangHongBaoService extends AccessibilityService {
     @Override
     public void onCreate() {
         super.onCreate();
+        MainActivity.service=this;
 
         mAccessbilityJobs = new ArrayList<>();
         mPkgAccessbilityJobMap = new HashMap<>();
