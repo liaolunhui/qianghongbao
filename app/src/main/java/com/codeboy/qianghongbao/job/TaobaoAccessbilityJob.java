@@ -147,6 +147,10 @@ public class TaobaoAccessbilityJob extends BaseAccessbilityJob {
                 node = AccessibilityHelper.findNodeInfosByText(nodeInfo, "重新加载");
             }
 
+            if(node==null){
+                node = AccessibilityHelper.findNodeInfosByText(nodeInfo, "查看宝贝并分享");
+            }
+
             if(node!=null){
                 AccessibilityHelper.performClick(node);
             }

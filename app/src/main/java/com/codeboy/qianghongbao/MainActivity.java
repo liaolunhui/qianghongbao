@@ -53,11 +53,12 @@ public class MainActivity extends BaseSettingsActivity {
     public static MainActivity currentActivity;
     public static QiangHongBaoService service;
     public static String copyText="";
+    public static String packageName="";
     public static AccessibilityNodeInfo nodeInfo;
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://192.168.1.222:8388");
+            mSocket = IO.socket("http://coupon.ngrok.hhappkf.com");
         } catch (Exception e) {}
     }
 
@@ -148,11 +149,16 @@ public class MainActivity extends BaseSettingsActivity {
                     }
 
                     MainActivity.copyText = (String) args[0];
+                    MainActivity.packageName=(String) args[1];
+                    if(packageName==null){
+                        MainActivity.packageName="com.taobao.taobao";
+                        //com.alimama.moon
+                    }
                     MainActivity.service.performGlobalAction(MainActivity.service.GLOBAL_ACTION_HOME);
                     MainActivity.currentActivity.setClipBoard(MainActivity.copyText);
 
                     //打开手机淘宝
-                    Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage("com.taobao.taobao");
+                    Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
                     startActivity(LaunchIntent);
 
                     new android.os.Handler().postDelayed(
@@ -164,7 +170,7 @@ public class MainActivity extends BaseSettingsActivity {
                                         @Override
                                         public void run() {
                                             //打开手机淘宝
-                                            Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage("com.taobao.taobao");
+                                            Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(packageName);
                                             startActivity(LaunchIntent);
                                         }
                                     });
